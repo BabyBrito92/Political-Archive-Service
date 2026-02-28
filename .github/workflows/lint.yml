@@ -1,0 +1,52 @@
+name: Linting
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black mypy
+
+      - name: Run Ruff
+        run: |
+          # Check for errors and warnings
+          ruff check api/ pipeline/ --output-format=github
+        continue-on-error: false
+
+      - name: Run Black (check only)
+        run: |
+          # Check if code is formatted
+          black --check api/ pipeline/
+        continue-on-error: false
+
+      - name: Run MyPy
+        run: |
+          # Type checking
+          mypy api/ --ignore-missing-imports --no-strict-optional
+        continue-on-error: true  # Don't fail on type errors initially
+
+      - name: Lint summary
+        if: always()
+        run: |
+          echo "✅ Linting completed"
+          echo "- Ruff: Python code quality checks"
+          echo "- Black: Code formatting verification"
+          echo "- MyPy: Static type checking"
